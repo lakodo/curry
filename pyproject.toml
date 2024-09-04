@@ -6,6 +6,12 @@ authors = [{ name = "Joris GUERRY", email = "j@9h.gg" }]
 readme = "README.md"
 keywords = ['python']
 requires-python = ">=3.8,<4.0"
+dependencies = [
+    "dask>=2023.5.0",
+    "graphviz>=0.20.3",
+    "pandas>=2.0.3",
+    "pydantic[email]>=2.8.2",
+]
 
 [project.urls]
 Homepage = "https://lakodo.github.io/curry/"
@@ -24,6 +30,9 @@ dev-dependencies = [
     "mkdocs>=1.4.2",
     "mkdocs-material>=8.5.10",
     "mkdocstrings[python]>=0.19.0",
+    "ipython>=8.12.3",
+    "ipykernel>=6.29.5",
+    "pandas-stubs>=2.0.2.230605",
 ]
 
 [build-system]
