@@ -5,7 +5,7 @@ site_description: Wrap dask scheduler to make it easy to buid datascience flow
 site_author: Joris GUERRY
 edit_uri: edit/main/docs/
 repo_name: lakodo/curry
-copyright: Maintained by <a href="https://lakodo.com">Florian</a>.
+copyright: Maintained by <a href="https://lako.dp">Lako.do</a>.
 
 nav:
   - Home: index.md
@@ -16,8 +16,8 @@ plugins:
       handlers:
         python:
           setup_commands:
-              - import sys
-              - sys.path.append('../')
+            - import sys
+            - sys.path.append('../')
 theme:
   name: material
   feature:
