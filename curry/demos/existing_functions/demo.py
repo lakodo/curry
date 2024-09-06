@@ -1,4 +1,4 @@
-from curry.demo.existing_functions.fake_methods import constant, filter_data, load_data, merge_data, sum_data
+from curry.demos.existing_functions.fake_methods import constant, filter_data, load_data, merge_data, sum_data
 from curry.methods import MethodManager
 from curry.models import Block
 from curry.workflow import submit_workflow

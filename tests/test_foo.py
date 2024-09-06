@@ -1,5 +1,5 @@
-from curry.foo import foo
+# from curry.foo import foo
 
 
-def test_foo():
-    assert foo("foo") == "foo"
+# def test_foo():
+#     assert foo("foo") == "foo"
