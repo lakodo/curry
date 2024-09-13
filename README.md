@@ -1,4 +1,4 @@
-# curry
+# Curry
 
 [![Release](https://img.shields.io/github/v/release/lakodo/curry)](https://img.shields.io/github/v/release/lakodo/curry)
 [![Build status](https://img.shields.io/github/actions/workflow/status/lakodo/curry/main.yml?branch=main)](https://github.com/lakodo/curry/actions/workflows/main.yml?query=branch%3Amain)
