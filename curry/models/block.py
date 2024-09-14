@@ -4,6 +4,8 @@ from functools import wraps
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from .errors import ProducerAlreadyRegistered
+
 
 class BlockConnection(BaseModel):
     source_block_id: str
@@ -24,14 +26,20 @@ class Block(BaseModel):
 
     # Decorator for registering a format producer
     @classmethod
-    def register_producer(cls, format_name: str):
-        def decorator(func: typing.Callable):
+    def register_producer(cls, format_name: str) -> typing.Callable:
+        def decorator(func: typing.Callable) -> typing.Callable:
+            if format_name in cls._producers:
+                raise ProducerAlreadyRegistered(format_name)
+
             @wraps(func)
-            def wrapper(self, *args, **kwargs):
-                return func(self, *args, **kwargs)
+            def wrapper(
+                *args: tuple[typing.Any, ...],
+                **kwargs: dict[str, typing.Any],
+            ) -> typing.Any:
+                return func(*args, **kwargs)
 
             # Register the method in the _producers dict
-            cls._producers[format_name] = func.__name__
+            cls._producers[format_name] = func
             return wrapper
 
         return decorator
@@ -44,7 +52,7 @@ class Block(BaseModel):
     def available_producers(self) -> list[str]:
         return list(self._producers.keys())
 
-    # HTML producer method
-    @register_producer("html")
-    def to_html(self) -> str:
-        return f"<h2>Block ID: {self.id}</h2>"
+    # # HTML producer method
+    # @register_producer("html")
+    # def to_html(self) -> str:
+    #     return f"<h2>Block ID: {self.id}</h2>"
