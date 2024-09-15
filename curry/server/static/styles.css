@@ -1,0 +1,13 @@
+a {
+  /* no decoration */
+  text-decoration: none;
+  color: unset;
+}
+
+h1 {
+  color: green;
+}
+
+h2 {
+  color: purple;
+}

@@ -1,7 +1,7 @@
 import datetime
 
 
-def convert_period_to_wrapping_months(start_datetime: datetime.datetime, end_datetime: datetime.datetime):
+def convert_period_to_wrapping_months(start_datetime: datetime.datetime, end_datetime: datetime.datetime) -> list:
     """Take a period (t0,t1) and return a list of months containing this period, [(m0,m1),(m1,m2),...(mn-1,mn)])"""
     periods = []
     current_datetime = start_datetime
@@ -15,5 +15,5 @@ def convert_period_to_wrapping_months(start_datetime: datetime.datetime, end_dat
     return periods
 
 
-def convert_month_to_str(month_start: datetime.datetime):
+def convert_month_to_str(month_start: datetime.datetime) -> str:
     return f"{month_start.strftime('%Y-%m')}"

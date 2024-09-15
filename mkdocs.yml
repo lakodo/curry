@@ -14,10 +14,30 @@ plugins:
   - search
   - mkdocstrings:
       handlers:
+        # python:
+        #   setup_commands:
+        #     - import sys
+        #     - sys.path.append('../')
         python:
-          setup_commands:
-            - import sys
-            - sys.path.append('../')
+          options:
+            extensions:
+              - griffe_typingdoc
+            show_root_heading: true
+            show_if_no_docstring: true
+            preload_modules:
+              - httpx
+              - starlette
+            inherited_members: true
+            members_order: source
+            separate_signature: true
+            unwrap_annotated: true
+            filters:
+              - "!^_"
+            merge_init_into_class: true
+            docstring_section_style: spacy
+            signature_crossrefs: true
+            show_symbol_type_heading: true
+            show_symbol_type_toc: true
 theme:
   name: material
   feature:

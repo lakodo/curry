@@ -1,5 +1,6 @@
 import inspect
 import typing
+from functools import wraps
 from uuid import uuid4
 
 from curry.models import Block
@@ -33,6 +34,7 @@ class MethodManager:
                 "output": sig.return_annotation,
             }
 
+            @wraps(func)
             def inner(*args: typing.Any, **kwargs: typing.Any) -> typing.Any:
                 return func(*args, **kwargs)
 

@@ -1,1 +1,1 @@
-::: curry.foo
+::: curry.models

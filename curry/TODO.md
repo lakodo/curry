@@ -1,5 +1,7 @@
 # TODO
 
+- create CustomBlocks, with their jinja representation,one endpoint to display the flow and execute it (edit is not part of the poc)
+
 - Create dummy webapp in Curry to demo the logic
 - start with same python env code
 - start with obvious blocks (loading data, saving data, dummy python function execution, log, export to csv)

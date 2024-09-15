@@ -1,3 +1,3 @@
-from .block import Block, BlockConnection
+from .block import Block, BlockConnection, BlockProducer
 
-__all__ = ["Block", "BlockConnection"]
+__all__ = ["Block", "BlockConnection", "BlockProducer"]

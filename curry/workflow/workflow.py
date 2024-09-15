@@ -13,9 +13,9 @@ def submit_workflow(blocks: list[Block]) -> dict:
     # Iterate through the blocks of the workflow
     for block in blocks:
         block_id = block.id
-        block_method_id = block.method_id
+        block_method_id = block.method_id or "no_method"
 
-        print("Processing block", block_id, "with method", block_method_id)
+        print("\t- Processing block", block_id, "with method", block_method_id)
 
         # Retrieve the function corresponding to the block type
         block_method_info = MethodManager.get_method_info(block_method_id)
