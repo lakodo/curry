@@ -4,6 +4,7 @@ import uuid
 from pydantic import BaseModel, ConfigDict, Field
 
 from .errors import ProducerAlreadyRegistered
+import json
 
 
 class BlockProducer(BaseModel):
@@ -44,7 +45,13 @@ class Block(BaseModel):
     parameters: dict[str, typing.Any] = {}
     connections: list[BlockConnection] = []
 
-    producers: dict[str, BlockProducer] = {}
+    producers: dict[str, BlockProducer] = {
+        "html": BlockProducer(
+            # format_name="html", func=lambda *args, **kwargs: json.dumps({"args": args, "kwargs": kwargs})
+            format_name="html",
+            func=lambda block, *args, **kwargs: block.id,
+        )
+    }
 
     def has_producer(self, format_name: str) -> bool:
         """
@@ -58,6 +65,9 @@ class Block(BaseModel):
         """
         return format_name in self.producers
 
+    def produce(self, format_name: str, *args: typing.Any, **kwargs: typing.Any) -> typing.Any:
+        return self.producers[format_name].func(self, *args, **kwargs)
+
     def available_producers(self) -> list[str]:
         """
         Returns a list of available producers.
@@ -68,8 +78,8 @@ class Block(BaseModel):
         return list(self.producers.keys())
 
     def register_producer(self, producer: BlockProducer) -> None:
-        if producer.format_name in self.producers:
-            raise ProducerAlreadyRegistered(producer.format_name)
+        # if producer.format_name in self.producers:
+        #     raise ProducerAlreadyRegistered(producer.format_name)
         self.producers[producer.format_name] = producer
 
     @classmethod

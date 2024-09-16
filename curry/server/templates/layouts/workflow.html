@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block title %}Workflow: {{ workflow_id }}{% endblock %}
+
+{% block content %}
+<h1>Workflow: {{ blocks|length }} blocks</h1>
+
+{% for b in blocks %}
+
+<pre>
+    {{ b.produce('html') |safe}}
+</pre>
+{% endfor %}
+<!-- <p>Blocks: {{ blocks }}</p> -->
+{% endblock %}
