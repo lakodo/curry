@@ -15,10 +15,15 @@ check: ## Run code quality tools.
 	@echo "🚀 Checking for obsolete dependencies: Running deptry"
 	@uv run deptry .
 
-.PHONY: run
-run: ## Run the code
-	@echo "🚀 Running code"
+.PHONY: run-demo
+run-demo: ## Run the code
+	@echo "🚀 Running demo code"
 	@uv run python curry/demos/existing_functions/demo.py
+
+.PHONY: run-server
+run-server: ## Run the code
+	@echo "🚀 Running server"
+	@uv run fastapi dev curry/server/main.py
 
 .PHONY: test
 test: ## Test the code with pytest

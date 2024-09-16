@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}Curry{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='styles/main.css') }}">
+</head>
+
+<body>
+
+    <header>
+        {% include 'partials/header.html' %}
+    </header>
+
+    <main>
+        {% block content %}
+        <!-- Default content -->
+        {% endblock %}
+    </main>
+
+
+    <!-- Footer content -->
+
+    <footer>
+        {% include 'partials/footer.html' %}
+    </footer>
+    <script src="{{ url_for('static', path='js/scripts.js') }}"></script>
+</body>
+
+</html>
