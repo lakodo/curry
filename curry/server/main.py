@@ -1,17 +1,26 @@
+import asyncio
 import datetime
 import os
 import typing
 
-from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import HTMLResponse
+from dask.distributed import Client
+from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+import threading
+
 
 from curry.methods import MethodManager
 from curry.models import Block, BlockConnection, BlockProducer
 from curry.workflow import submit_workflow
 
 from .utils.time import format_datetime
+
+client = Client()  # Starts a local cluster
+futures_lock = threading.Lock()
+results_lock = threading.Lock()
+
 
 app = FastAPI()
 
@@ -152,14 +161,15 @@ async def welcome(request: Request) -> HTMLResponse:
 async def read_item(request: Request, item_id: str) -> HTMLResponse:
     return templates.TemplateResponse(request=request, name="pages/item.html", context={"item": {"id": item_id}})
 
+
 @app.get("/teams", response_class=HTMLResponse)
 async def teams(request: Request) -> HTMLResponse:
     return templates.TemplateResponse("pages/teams.html", {"request": request})
 
+
 @app.get("/projects", response_class=HTMLResponse)
 async def projects(request: Request) -> HTMLResponse:
     return templates.TemplateResponse("pages/projects.html", {"request": request})
-
 
 
 @app.get("/users/{username}", response_class=HTMLResponse)
@@ -185,3 +195,58 @@ async def display_workflow(request: Request, workflow_id: str) -> HTMLResponse:
             "blocks": BLOCKS,
         },
     )
+
+
+WORKFLOW_FUTURES = {}
+WORKFLOW_RESULTS = {}
+
+
+@app.get("/workflows/{workflow_id}/compute", response_class=HTMLResponse)
+async def compute_workflow(request: Request, workflow_id: str) -> HTMLResponse:
+    s = submit_workflow(BLOCKS)
+    future = s["result_future"]
+    with futures_lock:
+        WORKFLOW_FUTURES[workflow_id] = future
+    workflow_url = app.url_path_for("display_workflow", workflow_id=workflow_id)
+    return RedirectResponse(url=workflow_url)
+
+
+@app.websocket("/workflows/{workflow_id}/progress")
+async def websocket_progress(websocket: WebSocket, workflow_id: str):
+    await websocket.accept()
+    try:
+        with futures_lock:
+            future = WORKFLOW_FUTURES.get(workflow_id)
+        if not future:
+            await websocket.send_text("Error: No such workflow")
+            await websocket.close()
+            return
+
+        # Get all the futures associated with the task graph
+        futures = client.futures_of(future)
+        total_tasks = len(futures)
+
+        while True:
+            # Count the number of completed tasks
+            completed_tasks = sum(f.status == "finished" for f in futures)
+            progress = int((completed_tasks / total_tasks) * 100)
+            await websocket.send_text(str(progress))
+
+            if completed_tasks >= total_tasks:
+                break
+
+            await asyncio.sleep(1)  # Adjust the sleep time as needed
+
+        # Ensure the progress reaches 100% at the end
+        await websocket.send_text("100")
+
+        # Retrieve and store the result
+        result = future.result()
+        with results_lock:
+            WORKFLOW_RESULTS[workflow_id] = result
+
+    except WebSocketDisconnect:
+        print(f"Client disconnected from workflow {workflow_id} progress WebSocket")
+    except Exception as e:
+        print(f"Error in progress WebSocket for workflow {workflow_id}: {e}")
+        await websocket.close()

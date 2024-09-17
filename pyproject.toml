@@ -7,7 +7,7 @@ readme = "README.md"
 keywords = ['python']
 requires-python = ">=3.9,<=3.12"
 dependencies = [
-    "dask>=2023.5.0",
+    "dask[distributed]>=2023.5.0",
     "faker>=28.4.1",
     "fastapi[standard]>=0.114.2",
     "graphviz>=0.20.3",
@@ -16,6 +16,7 @@ dependencies = [
     "pydantic[email]>=2.8.2",
     "babel>=2.16.0",
     "pytz>=2024.1",
+    "websockets>=13.0.1",
 ]
 
 [project.urls]

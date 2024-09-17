@@ -2,9 +2,12 @@ import typing
 
 from dask import delayed
 from dask.delayed import Delayed
+from dask.distributed import Client
 
 from curry.methods import MethodManager
 from curry.models import Block
+
+client = Client()  # Ensure this is initialized at the top level
 
 
 # Function to create a Dask workflow based on the blocks
@@ -44,19 +47,23 @@ def submit_workflow(
         task_dict[block_id] = delayed(block_method)(**block_parameters)
 
     # Retrieve the final block
-    final_result: Delayed = task_dict[list(task_dict.keys())[-1]]
+    final_task: Delayed = task_dict[list(task_dict.keys())[-1]]
 
     # Execute the Dask workflow
+    result_future = None
     if execute:
-        result = final_result.compute()
+        # result = final_task.compute()
+        result_future = client.compute(final_task)
 
+    render_result = None
     if render:
-        render_result = final_result.visualize(format=render_format)
+        render_result = final_task.visualize(format=render_format, filename=render_filename)
 
     return {
-        "executed": execute,
-        "result": result if execute else None,
-        "rendered": render,
-        "final_result": final_result,
-        "render_result": render_result if render else None,
+        "result_future": result_future,
+        # "executed": execute,
+        # "result": result if execute else None,
+        # "rendered": render,
+        # "final_result": final_task,
+        "render_result": render_result,
     }

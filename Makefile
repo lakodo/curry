@@ -7,10 +7,8 @@ install: ## Install the virtual environment and install the pre-commit hooks
 
 .PHONY: build-css
 build-css: ## parse templates files of the server to let tailwind generate the final css file
-	@echo "🚀 Opening server folder"
-	@cd curry/server
-	@echo "🚀 Running npm command build:css"
-	@npm run build:css
+	@echo "🚀 Opening server folder and Running npm command build:css"
+	@cd curry/server && npm run build:css
 
 .PHONY: check
 check: ## Run code quality tools.

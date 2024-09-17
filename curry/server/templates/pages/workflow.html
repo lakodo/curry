@@ -6,6 +6,22 @@
 <h1>Workflow: {{ blocks|length }} blocks</h1>
 
 
+<!-- Progress Bar -->
+<div x-data="workflowProgress('{{ workflow_id }}')" class="mb-6">
+    <div class="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
+        <div class="bg-blue-500 h-full" :style="{ width: progress + '%' }"></div>
+    </div>
+    <p class="mt-2 text-gray-700 text-sm" x-text="'Progress: ' + progress + '%'"></p>
+</div>
+
+<!-- Download Result Button -->
+{% if result_available %}
+<a href="{{ url_for('get_workflow_result', workflow_id=workflow_id) }}"
+    class="inline-block bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+    Download Result
+</a>
+{% endif %}
+
 <section>
     {{workflow_svg | safe}}
 </section>
@@ -15,8 +31,10 @@
     <hr>
 
     {% for b in blocks %}
-    <div class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10">{{b.id}}</div>
-    
+    <div
+        class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10">
+        {{b.id}}</div>
+
     {{ b.produce('html') |safe}}
     <div class="border-t border-gray-200">
         <dl>
@@ -40,3 +58,40 @@
 
 <!-- <p>Blocks: {{ blocks }}</p> -->
 {% endblock %}
+
+
+<!-- Alpine.js Component -->
+<script>
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('workflowProgress', (workflow_id) => {
+            return {
+                progress: 0,
+                error: null,
+                init() {
+                    const protocol = (window.location.protocol === 'https:') ? 'wss://' : 'ws://';
+                    const ws = new WebSocket(protocol + window.location.host + `/workflows/${workflow_id}/progress`);
+                    ws.onmessage = (event) => {
+                        const message = event.data;
+                        if (message.startsWith('Error:')) {
+                            this.error = message;
+                            ws.close();
+                        } else {
+                            this.progress = parseInt(message);
+                            if (this.progress >= 100) {
+                                ws.close();
+                            }
+                        }
+                    };
+                    ws.onclose = () => {
+                        console.log('WebSocket closed');
+                    };
+                    ws.onerror = (error) => {
+                        console.error('WebSocket error:', error);
+                    };
+                }
+            }
+        })
+    })
+
+
+</script>
