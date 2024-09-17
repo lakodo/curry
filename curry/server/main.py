@@ -1,15 +1,16 @@
 import datetime
 import os
+import typing
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-import typing
 
 from curry.methods import MethodManager
 from curry.models import Block, BlockConnection, BlockProducer
 from curry.workflow import submit_workflow
+
 from .utils.time import format_datetime
 
 app = FastAPI()
@@ -60,7 +61,7 @@ def merge_data(data0: list[int], data1: list[int]) -> list[int]:
 
 
 class MyConstantBlock(Block):
-    def my_custom_html_renderer(self,block:Block) -> str:
+    def my_custom_html_renderer(self, block: Block) -> str:
         return f"<h2>CONSTANT Block ID: {self.id}</h2>"
 
     def __init__(self, *args: typing.Any, **kwargs: typing.Any) -> None:
@@ -144,16 +145,16 @@ templates.env.filters["format_datetime"] = format_datetime
 
 @app.get("/", response_class=HTMLResponse)
 async def welcome(request: Request) -> HTMLResponse:
-    return templates.TemplateResponse(request=request, name="index.html", context={})
+    return templates.TemplateResponse(request=request, name="pages/home.html", context={})
 
 
 @app.get("/items/{item_id}", response_class=HTMLResponse)
 async def read_item(request: Request, item_id: str) -> HTMLResponse:
-    return templates.TemplateResponse(request=request, name="item.html", context={"item": {"id": item_id}})
+    return templates.TemplateResponse(request=request, name="pages/item.html", context={"item": {"id": item_id}})
 
 
 @app.get("/users/{username}", response_class=HTMLResponse)
-async def user_profile(request: Request, username: str):
+async def user_profile(request: Request, username: str) -> HTMLResponse:
     user = {"name": username, "email": "no email yet", "joined_date": datetime.datetime.now()}
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -161,7 +162,17 @@ async def user_profile(request: Request, username: str):
 
 
 @app.get("/workflows/{workflow_id}", response_class=HTMLResponse)
-async def display_workflow(request: Request, workflow_id: str):
+async def display_workflow(request: Request, workflow_id: str) -> HTMLResponse:
+    s = submit_workflow(BLOCKS, execute=False, render=True, render_format="svg")
+    svg = s["render_result"]
+
     return templates.TemplateResponse(
-        "layouts/workflow.html", {"request": request, "workflow_id": workflow_id, "blocks": BLOCKS}
+        "pages/workflow.html",
+        {
+            #
+            "request": request,
+            "workflow_id": workflow_id,
+            "workflow_svg": svg.data,
+            "blocks": BLOCKS,
+        },
     )

@@ -3,9 +3,6 @@ import uuid
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from .errors import ProducerAlreadyRegistered
-import json
-
 
 class BlockProducer(BaseModel):
     format_name: str
