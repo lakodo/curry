@@ -4,6 +4,14 @@ install: ## Install the virtual environment and install the pre-commit hooks
 	@uv sync
 	@uv run pre-commit install
 
+
+.PHONY: build-css
+build-css: ## parse templates files of the server to let tailwind generate the final css file
+	@echo "🚀 Opening server folder"
+	@cd curry/server
+	@echo "🚀 Running npm command build:css"
+	@npm run build:css
+
 .PHONY: check
 check: ## Run code quality tools.
 	@echo "🚀 Checking lock file consistency with 'pyproject.toml'"

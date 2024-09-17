@@ -145,12 +145,21 @@ templates.env.filters["format_datetime"] = format_datetime
 
 @app.get("/", response_class=HTMLResponse)
 async def welcome(request: Request) -> HTMLResponse:
-    return templates.TemplateResponse(request=request, name="pages/home.html", context={})
+    return templates.TemplateResponse(request=request, name="pages/landing.html", context={})
 
 
 @app.get("/items/{item_id}", response_class=HTMLResponse)
 async def read_item(request: Request, item_id: str) -> HTMLResponse:
     return templates.TemplateResponse(request=request, name="pages/item.html", context={"item": {"id": item_id}})
+
+@app.get("/teams", response_class=HTMLResponse)
+async def teams(request: Request) -> HTMLResponse:
+    return templates.TemplateResponse("pages/teams.html", {"request": request})
+
+@app.get("/projects", response_class=HTMLResponse)
+async def projects(request: Request) -> HTMLResponse:
+    return templates.TemplateResponse("pages/projects.html", {"request": request})
+
 
 
 @app.get("/users/{username}", response_class=HTMLResponse)
