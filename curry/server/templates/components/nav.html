@@ -1,5 +1,7 @@
 <div class="flex h-16 shrink-0 items-center">
-    <img class="h-8 w-auto" src="{{ url_for('static', path='images/curiosity.png') }}" alt="Your Company">
+    <a href="/">
+        <img class="h-8 w-auto" src="{{ url_for('static', path='images/curiosity.png') }}" alt="Your Company">
+    </a>
 </div>
 <nav class="flex flex-1 flex-col">
     <ul role="list" class="flex flex-1 flex-col gap-y-7">
@@ -7,7 +9,7 @@
             <ul role="list" class="-mx-2 space-y-1">
                 <li>
                     <!-- Current: "bg-gray-50 text-indigo-600", Default: "text-gray-700 hover:text-indigo-600 hover:bg-gray-50" -->
-                    <a href="/"
+                    <a href="/home"
                         class="group flex gap-x-3 rounded-md bg-gray-50 p-2 text-sm font-semibold leading-6 text-indigo-600">
                         <svg class="h-6 w-6 shrink-0 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                             stroke="currentColor" aria-hidden="true">
@@ -60,7 +62,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round"
                                 d="M13.5 10.5H21A7.5 7.5 0 0013.5 3v7.5z" />
                         </svg>
-                        Applications de suivi   
+                        Applications de suivi
                     </a>
                 </li>
             </ul>
@@ -98,8 +100,7 @@
         <li class="-mx-6 mt-auto">
             <a href="/users/j61678"
                 class="flex items-center gap-x-4 px-6 py-3 text-sm font-semibold leading-6 text-gray-900 hover:bg-gray-50">
-                <img class="h-8 w-8 rounded-full bg-gray-50"
-                    src="{{ url_for('static', path='images/j61678.jpeg') }}"
+                <img class="h-8 w-8 rounded-full bg-gray-50" src="{{ url_for('static', path='images/j61678.jpeg') }}"
                     alt="">
                 <span class="sr-only">Votre profil</span>
                 <span aria-hidden="true">J61678</span>

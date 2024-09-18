@@ -1,3 +1,5 @@
+import typing
+
 from curry.demos.existing_functions.fake_methods import constant, filter_data, load_data, merge_data, sum_data
 from curry.methods import MethodManager
 from curry.models import Block
@@ -11,7 +13,7 @@ MethodManager.register(name="sum_data")(sum_data)
 MethodManager.register(name="merge_data")(merge_data)
 
 
-BLOCKS_AS_JSON = [
+BLOCKS_AS_JSON:list[dict[str,typing.Any]] = [
     {"id": "constant-0", "method_id": "constant", "parameters": {"value": 2}, "connections": []},
     {"id": "load-data-0", "method_id": "load_data", "parameters": {"path": "/data/sample.csv"}, "connections": []},
     {"id": "constant-1", "method_id": "constant", "parameters": {"value": 5}, "connections": []},
@@ -55,6 +57,5 @@ BLOCKS_AS_JSON = [
 BLOCKS = [Block.model_validate(block) for block in BLOCKS_AS_JSON]
 
 # Executing the workflow
-s = submit_workflow(BLOCKS)
-s["final_result"].visualize()  # Visualize the Dask graph
+s = submit_workflow(BLOCKS, render=True)
 print("Result:", s["result"])

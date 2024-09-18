@@ -1,24 +1,29 @@
 # TODO
 
+https://docs.dask.org/en/stable/deploying-python-advanced.html
+- launch dask in another process (create make command)
+- remove dask client from server
+- configure server dask client to use the dask cluster (.env/settings_pydantic ?)
 
+
+
+- dask (à part) to get progress from client
+    - add localcluster to some new dask module
+    - find a way to get progress from it
+- ws bassis to exchange data
+- front alpinejs to relay data without refreshing
 - start with obvious blocks (loading data, saving data, dummy python function execution, log, export to csv)
 - try to plot a time serie and some intervals
-- use Jinja2 with a fastapi app in the server folder -> each block should generate a template for its specific needs (see Block.producer)
+- submit tasks from tasks https://github.com/dask/dask-examples/blob/main/applications/evolving-workflows.ipynb
 
-## Goal
 
-Curry's goal is to handle flows of blocks and hide Dask behind the scenes.
+## Extra
 
-## Example
+use validate_call of registered function
+from pydantic import ValidationError, validate_call
 
-Example of a flow:
+## Quick wins 
 
-```python
-
-import curry
-# 1. Enlist blocks
-# 2. Enlist workers
-# 3. Build a flow (a graph of blocks)
-# 4. Execute the flow
-
-```
+- prophet block (https://github.com/dask/dask-examples/blob/main/applications/forecasting-with-prophet.ipynb)
+- worker resilience: https://examples.dask.org/resilience.html
+- evolving workflows https://github.com/dask/dask-examples/blob/main/applications/evolving-workflows.ipynb

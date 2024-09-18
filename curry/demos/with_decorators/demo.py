@@ -3,7 +3,7 @@ import time
 from curry.methods import MethodManager
 from curry.models import Block
 from curry.workflow import submit_workflow
-
+import typing
 # Defining the example methods
 
 
@@ -98,7 +98,7 @@ def merge_data(data0: list[int], data1: list[int]) -> list[int]:
 # BLOCKS_AS_JSON = [block.model_dump_json() for block in BLOCKS]
 # print("Blocks as JSON:", BLOCKS_AS_JSON)
 
-BLOCKS_AS_JSON = [
+BLOCKS_AS_JSON: list[dict[str, typing.Any]] = [
     {"id": "constant-0", "method_id": "constant", "parameters": {"value": 2}, "connections": []},
     {"id": "load-data-0", "method_id": "load_data", "parameters": {"path": "/data/sample.csv"}, "connections": []},
     {"id": "constant-1", "method_id": "constant", "parameters": {"value": 5}, "connections": []},
@@ -142,6 +142,5 @@ BLOCKS_AS_JSON = [
 BLOCKS = [Block.model_validate(block) for block in BLOCKS_AS_JSON]
 
 # Executing the workflow
-s = submit_workflow(BLOCKS)
-s["final_result"].visualize()  # Visualize the Dask graph
+s = submit_workflow(BLOCKS, render=True)
 print("Result:", s["result"])

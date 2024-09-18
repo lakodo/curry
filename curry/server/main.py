@@ -1,26 +1,23 @@
-import asyncio
 import datetime
 import os
+import threading
+import time
 import typing
 
-from dask.distributed import Client
-from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect
-from fastapi.responses import HTMLResponse, RedirectResponse
+from dask.delayed import Delayed, delayed
+from distributed import Future
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-import threading
-
 
 from curry.methods import MethodManager
 from curry.models import Block, BlockConnection, BlockProducer
+from curry.scheduler.client import default_local_client
+from curry.utils.typing.typing import AnyDict
 from curry.workflow import submit_workflow
 
 from .utils.time import format_datetime
-
-client = Client()  # Starts a local cluster
-futures_lock = threading.Lock()
-results_lock = threading.Lock()
-
 
 app = FastAPI()
 
@@ -38,6 +35,7 @@ app.mount(
 @MethodManager.register(name="constant")
 def constant(value: int) -> int:
     """Returns a constant value."""
+    time.sleep(5)
     return value
 
 
@@ -45,6 +43,7 @@ def constant(value: int) -> int:
 def load_data(path: str) -> list[int]:
     """Simulates loading data from a file."""
     print(f"Loading data from {path}")
+    time.sleep(5)
     return list(range(10))
 
 
@@ -52,6 +51,7 @@ def load_data(path: str) -> list[int]:
 def filter_data(data: list[int], threshold: int) -> list[int]:
     """Filters data based on a threshold."""
     print(f"Filtering data with threshold {threshold}")
+    time.sleep(2)
     return [x for x in data if x > threshold]
 
 
@@ -59,6 +59,7 @@ def filter_data(data: list[int], threshold: int) -> list[int]:
 def sum_data(data: list[int]) -> int:
     """Sums the data."""
     print("Summing data")
+    time.sleep(3)
     return sum(data)
 
 
@@ -66,6 +67,7 @@ def sum_data(data: list[int]) -> int:
 def merge_data(data0: list[int], data1: list[int]) -> list[int]:
     """Merges two data lists."""
     print("Merging data")
+    time.sleep(3)
     return data0 + data1
 
 
@@ -74,11 +76,14 @@ class MyConstantBlock(Block):
         return f"<h2>CONSTANT Block ID: {self.id}</h2>"
 
     def __init__(self, *args: typing.Any, **kwargs: typing.Any) -> None:
-        super().__init__(*args, **kwargs)
-
-        self.name = "constant"
-        self.description = kwargs.get("description") or "A block that returns a constant value."
-        self.method_id = "constant"
+        super().__init__(
+            #
+            *args,
+            method_id="constant",
+            name="constant",
+            description="A block that returns a constant value.",
+            **kwargs,
+        )
 
         self.register_producer(
             BlockProducer(
@@ -89,7 +94,7 @@ class MyConstantBlock(Block):
         )
 
 
-BLOCKS = [
+BLOCKS: list[Block] = [
     # MethodManager.get_block_template(
     #     method_name="constant", block_modifications={"id": "constant-0", "parameters": {"value": 2}}
     # ),
@@ -148,13 +153,18 @@ BLOCKS = [
 
 
 templates = Jinja2Templates(directory=os.path.join(MAIN_FILE_PATH, "templates"))
-templates.env.auto_reload = True
-templates.env.filters["format_datetime"] = format_datetime
+templates.env.auto_reload = True  # type: ignore  # noqa: PGH003
+templates.env.filters["format_datetime"] = format_datetime  # type: ignore  # noqa: PGH003
 
 
 @app.get("/", response_class=HTMLResponse)
 async def welcome(request: Request) -> HTMLResponse:
     return templates.TemplateResponse(request=request, name="pages/landing.html", context={})
+
+
+@app.get("/home", response_class=HTMLResponse)
+async def home(request: Request) -> HTMLResponse:
+    return templates.TemplateResponse(request=request, name="pages/home.html", context={})
 
 
 @app.get("/items/{item_id}", response_class=HTMLResponse)
@@ -174,7 +184,7 @@ async def projects(request: Request) -> HTMLResponse:
 
 @app.get("/users/{username}", response_class=HTMLResponse)
 async def user_profile(request: Request, username: str) -> HTMLResponse:
-    user = {"name": username, "email": "no email yet", "joined_date": datetime.datetime.now()}
+    user: AnyDict = {"name": username, "email": "no email yet", "joined_date": datetime.datetime.now()}
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return templates.TemplateResponse("layouts/user_base.html", {"request": request, "user": user})
@@ -197,56 +207,129 @@ async def display_workflow(request: Request, workflow_id: str) -> HTMLResponse:
     )
 
 
-WORKFLOW_FUTURES = {}
-WORKFLOW_RESULTS = {}
+# @app.get("/dask", response_class=HTMLResponse)
+# async def display_workflow(request: Request, workflow_id: str) -> HTMLResponse:
 
 
-@app.get("/workflows/{workflow_id}/compute", response_class=HTMLResponse)
-async def compute_workflow(request: Request, workflow_id: str) -> HTMLResponse:
-    s = submit_workflow(BLOCKS)
-    future = s["result_future"]
-    with futures_lock:
-        WORKFLOW_FUTURES[workflow_id] = future
-    workflow_url = app.url_path_for("display_workflow", workflow_id=workflow_id)
-    return RedirectResponse(url=workflow_url)
+# WORKFLOW_FUTURES = {}
+# WORKFLOW_RESULTS = {}
 
 
-@app.websocket("/workflows/{workflow_id}/progress")
-async def websocket_progress(websocket: WebSocket, workflow_id: str):
-    await websocket.accept()
-    try:
-        with futures_lock:
-            future = WORKFLOW_FUTURES.get(workflow_id)
-        if not future:
-            await websocket.send_text("Error: No such workflow")
-            await websocket.close()
-            return
+workflow_state_lock = threading.Lock()
+WORKFLOW_STATE: dict[str, dict[str, Delayed]] = {}
+WORKFLOW_FUTURE: dict[str, dict[str, Future]] = {}
 
-        # Get all the futures associated with the task graph
-        futures = client.futures_of(future)
-        total_tasks = len(futures)
 
-        while True:
-            # Count the number of completed tasks
-            completed_tasks = sum(f.status == "finished" for f in futures)
-            progress = int((completed_tasks / total_tasks) * 100)
-            await websocket.send_text(str(progress))
+@app.get("/workflows/{workflow_id}/delay")
+async def delay_workflow(request: Request, workflow_id: str) -> HTMLResponse:
+    task_delayed_dict: dict[str, Delayed] = {}
 
-            if completed_tasks >= total_tasks:
-                break
+    # Iterate through the blocks of the workflow
+    for block in BLOCKS:
+        block_id = block.id
+        block_method_id = block.method_id or "no_method"
 
-            await asyncio.sleep(1)  # Adjust the sleep time as needed
+        # Retrieve the function corresponding to the block type
+        block_method_info = MethodManager.get_method_info(block_method_id)
+        block_method = block_method_info.method
 
-        # Ensure the progress reaches 100% at the end
-        await websocket.send_text("100")
+        # Merge block parameters with block connections
+        block_parameters = {}
+        if len(block.connections) > 0 or len(block.parameters) > 0:
+            block_parameters: AnyDict = {
+                **block.parameters,
+                **{
+                    connection.self_input_name: task_delayed_dict[connection.source_block_id]
+                    for connection in block.connections
+                },
+            }
 
-        # Retrieve and store the result
-        result = future.result()
-        with results_lock:
-            WORKFLOW_RESULTS[workflow_id] = result
+        # Create the Dask task for the block and submit it
+        with workflow_state_lock:
+            task_delayed_dict[block_id] = delayed(block_method)(**block_parameters)
+            print(block_method.__name__, block_parameters,task_delayed_dict[block_id])
+            default_local_client.submit(task_delayed_dict[block_id])
+            # task_future_dict[block_id] = default_local_client.submit(task_delayed_dict[block_id])  # type: ignore  # noqa: PGH003
 
-    except WebSocketDisconnect:
-        print(f"Client disconnected from workflow {workflow_id} progress WebSocket")
-    except Exception as e:
-        print(f"Error in progress WebSocket for workflow {workflow_id}: {e}")
-        await websocket.close()
+    with workflow_state_lock:
+        WORKFLOW_STATE[workflow_id] = task_delayed_dict
+        print("\ttask_delayed_dict:\n", WORKFLOW_STATE[workflow_id])
+
+    return 0
+
+
+@app.get("/workflows/{workflow_id}/submit")
+async def submit_workflow(request: Request, workflow_id: str) -> HTMLResponse:
+    task_future_dict: dict[str, Future] = {}
+
+    with workflow_state_lock:
+        last_task_delayed: Delayed = WORKFLOW_STATE[workflow_id][list(WORKFLOW_STATE[workflow_id].keys())[-1]]
+
+        last_task_future = default_local_client.submit(last_task_delayed)
+        WORKFLOW_FUTURE[workflow_id] = {"last": last_task_future}
+        print("\ttask_future_dict:\n", WORKFLOW_FUTURE[workflow_id])
+
+    return 1
+
+
+@app.get("/workflows/{workflow_id}/result")
+async def print_result_workflow(request: Request, workflow_id: str) -> HTMLResponse:
+    if workflow_id in WORKFLOW_STATE and workflow_id in WORKFLOW_FUTURE:
+        with workflow_state_lock:
+            print("\ttask_delayed_dict:\n", WORKFLOW_STATE[workflow_id])
+            print("\ttask_future_dict:\n", WORKFLOW_FUTURE[workflow_id])
+            for k, v in WORKFLOW_FUTURE[workflow_id].items():
+                print(k, v)
+
+    return 2
+
+
+# @app.get("/workflows/{workflow_id}/compute", response_class=HTMLResponse)
+# async def compute_workflow(request: Request, workflow_id: str) -> RedirectResponse:
+#     s = submit_workflow(BLOCKS)
+#     future = s["result_future"]
+#     with futures_lock:
+#         WORKFLOW_FUTURES[workflow_id] = future
+#     workflow_url = app.url_path_for("display_workflow", workflow_id=workflow_id)
+#     return RedirectResponse(url=workflow_url)
+
+
+# @app.websocket("/workflows/{workflow_id}/progress")
+# async def websocket_progress(websocket: WebSocket, workflow_id: str):
+#     await websocket.accept()
+#     try:
+#         with futures_lock:
+#             future = WORKFLOW_FUTURES.get(workflow_id)
+#         if not future:
+#             await websocket.send_text("Error: No such workflow")
+#             await websocket.close()
+#             return
+
+#         # Get all the futures associated with the task graph
+#         futures = client.futures_of(future)
+#         total_tasks = len(futures)
+
+#         while True:
+#             # Count the number of completed tasks
+#             completed_tasks = sum(f.status == "finished" for f in futures)
+#             progress = int((completed_tasks / total_tasks) * 100)
+#             await websocket.send_text(str(progress))
+
+#             if completed_tasks >= total_tasks:
+#                 break
+default_local_client
+#             await asyncio.sleep(1)  # Adjust the sleep time as needed
+
+#         # Ensure the progress reaches 100% at the end
+#         await websocket.send_text("100")
+
+#         # Retrieve and store the result
+#         result = future.result()
+#         with results_lock:
+#             WORKFLOW_RESULTS[workflow_id] = result
+
+#     except WebSocketDisconnect:
+#         print(f"Client disconnected from workflow {workflow_id} progress WebSocket")
+#     except Exception as e:
+#         print(f"Error in progress WebSocket for workflow {workflow_id}: {e}")
+#         await websocket.close()
