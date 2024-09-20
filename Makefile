@@ -22,14 +22,31 @@ check: ## Run code quality tools.
 	@uv run deptry .
 
 .PHONY: run-demo
-run-demo: ## Run the code
+run-demo: ## Run a demo code
 	@echo "🚀 Running demo code"
 	@uv run python curry/demos/existing_functions/demo.py
 
 .PHONY: run-server
-run-server: ## Run the code
+run-server: ## Run the fastapi app server
 	@echo "🚀 Running server"
 	@uv run fastapi dev curry/server/main.py
+
+
+.PHONY: run-local-dask-scheduler
+run-local-dask-scheduler: ## Run a local Dask scheduler
+	@echo "🚀 Running a local Dask scheduler"
+	@uv run python curry/schedulers/dask/local_scheduler.py
+
+.PHONY: run-local-dask-workers
+run-local-dask-workers: ## Run a local Dask scheduler (with auto nb)
+	@echo "🚀 Running local Dask workers (with auto nb)"
+	@uv run dask worker --nworkers=auto --no-dashboard tcp://192.168.0.82:18000
+
+.PHONY: run-local-dask-test
+run-local-dask-test: ## Run a local Dask scheduler (with auto nb)
+	@echo "🚀 Running local Dask workers (with auto nb)"
+	@uv run python curry/schedulers/dask/local_test.py
+
 
 .PHONY: test
 test: ## Test the code with pytest
