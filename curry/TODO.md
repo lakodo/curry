@@ -4,7 +4,10 @@
 
 ### 0/ intégrer sqlite
 
-utiliser sqlite pour sauvegarder un flow (sqlalchemy!)
+~~- utiliser sqlite pour sauvegarder un flow (sqlalchemy!)~~
+
+- creer un model de flow
+- utilsier des boutons avec requet GET pour le modifier (cf 1/)
 
 ### 1/ block flow builder
 

@@ -3,6 +3,7 @@ mydask.png
 mydask.svg
 curry/server/node_modules
 curry/demos/edf
+database.db
 
 # From https://raw.githubusercontent.com/github/gitignore/main/Python.gitignore
 

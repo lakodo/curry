@@ -80,6 +80,22 @@ docs-test: ## Test if documentation can be built without warnings or errors
 docs: ## Build and serve the documentation
 	@uv run mkdocs serve
 
+.PHONY: alembic-check
+alembic-check: ## Check the current database state compared to the alembic migrations
+	@echo "🚀 Running alembic check"
+	@uv run alembic check
+
+
+.PHONY: alembic-autogenerate
+alembic-autogenerate: ## Generate a migration script
+	@echo "🚀 Running alembic revision autogenerate with message."
+	@uv run alembic revision --autogenerate -m "$(message)"
+
+.PHONY: alembic-upgrade
+alembic-upgrade: ## Upgrade the database to the latest version
+	@echo "🚀 Running alembic upgrade head"
+	@uv run alembic upgrade head
+
 .PHONY: help
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
