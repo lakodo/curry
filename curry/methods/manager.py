@@ -1,7 +1,8 @@
+import functools
 import inspect
 import typing
 from functools import wraps
-from inspect import Parameter, Signature
+from inspect import Signature
 from uuid import uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, validate_call
@@ -30,6 +31,7 @@ class MethodInfo(BaseModel):
     original_name: str = Field(description="The true python name of thefunction (should not be set manually)")
     description: typing.Optional[str] = Field(description="A description of the method")
     method: AnyCallable
+    method_code: str = ""
     # inputs: dict[str, Parameter] = Field({}, description="List of the input parameters of the method")
     # output: Parameter = Field(description="Output parameter of the method")
     signature: Signature = Field(description="Function signature")
@@ -54,6 +56,9 @@ class MethodManager:
             method_name = name or func.__name__
             method_version = version or "0.1.0"
             sig = inspect.signature(func)
+            code = inspect.getsource(func)
+            code = "\n".join([line for line in code.splitlines() if not line.startswith('@MethodManager')])
+
 
             # Register method with automatic input/output discovery
             cls._registry[method_name] = MethodInfo(
@@ -63,6 +68,7 @@ class MethodManager:
                 original_name=func.__name__,
                 description=description or func.__doc__ or "",
                 method=func,
+                method_code=code,
                 signature=sig,
                 # inputs={k: v.annotation for k, v in sig.parameters.items()},
                 # output=sig.return_annotation,
@@ -101,3 +107,7 @@ class MethodManager:
         if not method_info:
             raise NotRegisteredError(method_name)
         return method_info
+
+    @classmethod
+    def get_registry(cls):
+        return cls._registry

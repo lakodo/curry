@@ -95,7 +95,7 @@ class MyConstantBlock(Block):
         )
 
 
-BLOCKS: list[Block] = [
+BLOCK_FLOW_EXAMPLE: list[Block] = [
     # MethodManager.get_block_template(
     #     method_name="constant", block_modifications={"id": "constant-0", "parameters": {"value": 2}}
     # ),
@@ -193,7 +193,7 @@ async def user_profile(request: Request, username: str) -> HTMLResponse:
 
 @app.get("/workflows/{workflow_id}", response_class=HTMLResponse)
 async def display_workflow(request: Request, workflow_id: str) -> HTMLResponse:
-    s = submit_workflow(BLOCKS, execute=False, render=True, render_format="svg")
+    s = submit_workflow(BLOCK_FLOW_EXAMPLE, execute=False, render=True, render_format="svg")
     svg = s["render_result"]
 
     return templates.TemplateResponse(
@@ -203,7 +203,26 @@ async def display_workflow(request: Request, workflow_id: str) -> HTMLResponse:
             "request": request,
             "workflow_id": workflow_id,
             "workflow_svg": svg.data,
-            "blocks": BLOCKS,
+            "blocks": BLOCK_FLOW_EXAMPLE,
+        },
+    )
+
+
+@app.get("/builder/{workflow_id}", response_class=HTMLResponse)
+async def display_workflow_builder(request: Request, workflow_id: str) -> HTMLResponse:
+    methods = MethodManager.get_registry()
+
+    # a = list(methods.values())
+    # m=a[0]
+    # m.method.__code__
+
+    return templates.TemplateResponse(
+        "pages/builder.html",
+        {
+            #
+            "request": request,
+            "methods": methods,
+            "workflow_id": workflow_id,
         },
     )
 
@@ -226,7 +245,7 @@ async def delay_workflow(request: Request, workflow_id: str) -> HTMLResponse:
     task_delayed_dict: dict[str, Delayed] = {}
 
     # Iterate through the blocks of the workflow
-    for block in BLOCKS:
+    for block in BLOCK_FLOW_EXAMPLE:
         block_id = block.id
         block_method_id = block.method_id or "no_method"
 
@@ -320,4 +339,3 @@ async def test_dask(request: Request, key: int):
     client.close()
 
     return {"2": delta, "key": key, "summed": summed_result}
-
