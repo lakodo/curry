@@ -13,7 +13,7 @@ from fastapi.templating import Jinja2Templates
 
 from curry.methods import MethodManager
 from curry.models import Block, BlockConnection, BlockProducer
-from curry.scheduler.client import default_local_client
+from curry.schedulers.client import default_local_client
 from curry.utils.typing.typing import AnyDict
 from curry.workflow import submit_workflow
 
@@ -247,7 +247,7 @@ async def delay_workflow(request: Request, workflow_id: str) -> HTMLResponse:
         # Create the Dask task for the block and submit it
         with workflow_state_lock:
             task_delayed_dict[block_id] = delayed(block_method)(**block_parameters)
-            print(block_method.__name__, block_parameters,task_delayed_dict[block_id])
+            print(block_method.__name__, block_parameters, task_delayed_dict[block_id])
             default_local_client.submit(task_delayed_dict[block_id])
             # task_future_dict[block_id] = default_local_client.submit(task_delayed_dict[block_id])  # type: ignore  # noqa: PGH003
 

@@ -6,8 +6,6 @@ from time import sleep
 import dask
 from dask import bag as db
 from dask.distributed import Client
-from distributed.compatibility import asyncio_run
-from distributed.config import get_loop_factory
 
 logger = logging.getLogger("curry.scheduler.dask.local_test")
 
