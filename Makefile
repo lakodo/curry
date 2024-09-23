@@ -40,7 +40,7 @@ run-local-dask-scheduler: ## Run a local Dask scheduler
 .PHONY: run-local-dask-workers
 run-local-dask-workers: ## Run a local Dask scheduler (with auto nb)
 	@echo "🚀 Running local Dask workers (with auto nb)"
-	@uv run dask worker --nworkers=auto --no-dashboard tcp://192.168.0.82:18000
+	@uv run dask worker --nworkers=4 --nthreads=10 --no-dashboard tcp://127.0.0.1:18000
 
 .PHONY: run-local-dask-test
 run-local-dask-test: ## Run a local Dask scheduler (with auto nb)

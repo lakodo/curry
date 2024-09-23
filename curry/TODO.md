@@ -1,5 +1,9 @@
 # TODO
 
+
+
+- en fonction des outputs du blocs d'avant on peut proposer les blocs compatibles et en plus un bloc de "fin"
+
 https://docs.dask.org/en/stable/deploying-python-advanced.html
 - launch dask in another process (create make command)
 - remove dask client from server

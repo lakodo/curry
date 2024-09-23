@@ -1,10 +1,12 @@
 import datetime
+import math
 import os
 import threading
 import time
 import typing
 
 from dask.delayed import Delayed, delayed
+from dask.distributed import Client
 from distributed import Future
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse
@@ -13,7 +15,6 @@ from fastapi.templating import Jinja2Templates
 
 from curry.methods import MethodManager
 from curry.models import Block, BlockConnection, BlockProducer
-from curry.schedulers.client import default_local_client
 from curry.utils.typing.typing import AnyDict
 from curry.workflow import submit_workflow
 
@@ -284,52 +285,39 @@ async def print_result_workflow(request: Request, workflow_id: str) -> HTMLRespo
     return 2
 
 
-# @app.get("/workflows/{workflow_id}/compute", response_class=HTMLResponse)
-# async def compute_workflow(request: Request, workflow_id: str) -> RedirectResponse:
-#     s = submit_workflow(BLOCKS)
-#     future = s["result_future"]
-#     with futures_lock:
-#         WORKFLOW_FUTURES[workflow_id] = future
-#     workflow_url = app.url_path_for("display_workflow", workflow_id=workflow_id)
-#     return RedirectResponse(url=workflow_url)
+@app.get("/test-dask/{key}")
+async def test_dask(request: Request, key: int):
+    from dask import bag as db
 
+    client = Client(address="tcp://127.0.0.1:18000")
 
-# @app.websocket("/workflows/{workflow_id}/progress")
-# async def websocket_progress(websocket: WebSocket, workflow_id: str):
-#     await websocket.accept()
-#     try:
-#         with futures_lock:
-#             future = WORKFLOW_FUTURES.get(workflow_id)
-#         if not future:
-#             await websocket.send_text("Error: No such workflow")
-#             await websocket.close()
-#             return
+    def multiply_by_two(x: int) -> int:
+        time.sleep(1)
+        print(f"multiply_by_two({x})")
+        return 2 * x
 
-#         # Get all the futures associated with the task graph
-#         futures = client.futures_of(future)
-#         total_tasks = len(futures)
+    N = key
 
-#         while True:
-#             # Count the number of completed tasks
-#             completed_tasks = sum(f.status == "finished" for f in futures)
-#             progress = int((completed_tasks / total_tasks) * 100)
-#             await websocket.send_text(str(progress))
+    x = db.from_sequence(range(N))
 
-#             if completed_tasks >= total_tasks:
-#                 break
-default_local_client
-#             await asyncio.sleep(1)  # Adjust the sleep time as needed
+    mults = x.map(multiply_by_two)
 
-#         # Ensure the progress reaches 100% at the end
-#         await websocket.send_text("100")
+    summed = mults.sum()
 
-#         # Retrieve and store the result
-#         result = future.result()
-#         with results_lock:
-#             WORKFLOW_RESULTS[workflow_id] = result
+    t0 = time.time()
+    summed = client.compute(summed)
 
-#     except WebSocketDisconnect:
-#         print(f"Client disconnected from workflow {workflow_id} progress WebSocket")
-#     except Exception as e:
-#         print(f"Error in progress WebSocket for workflow {workflow_id}: {e}")
-#         await websocket.close()
+    # time.sleep(1.0)
+
+    while not summed.done():
+        # print("loop", key)
+        time.sleep(0.1)
+    t1 = time.time()
+
+    delta = math.floor(t1 - t0)
+    summed_result = summed.result()
+    print(f"[{delta}s] `sum(range({N}))` on cluster: {summed_result}\t(should be {N * (N - 1)})")
+    client.close()
+
+    return {"2": delta, "key": key, "summed": summed_result}
+
