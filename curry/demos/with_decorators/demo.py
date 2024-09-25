@@ -1,9 +1,10 @@
 import time
-
-from curry.methods import MethodManager
-from curry.models import Block
-from curry.workflow import submit_workflow
 import typing
+
+from curry.block import Block
+from curry.flow import submit_workflow
+from curry.methods import MethodManager
+
 # Defining the example methods
 
 

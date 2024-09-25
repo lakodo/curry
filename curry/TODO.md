@@ -26,6 +26,8 @@ avoir un formalisme d'input output pour matcher les transactions (sort de render
 
 ## Autre
 
+
+- lire thèse Paul BONIOL
 - dask (à part) to get progress from client
   - add localcluster to some new dask module
   - find a way to get progress from it
@@ -52,3 +54,8 @@ from pydantic import ValidationError, validate_call
 - worker resilience: <https://examples.dask.org/resilience.html>
 - evolving workflows <https://github.com/dask/dask-examples/blob/main/applications/evolving-workflows.ipynb>
 - <https://docs.dask.org/en/stable/deploying-python-advanced.html>
+
+
+## Quotes
+
+Une interface graphique c'est sympa pour faire rapidement 2/3 trucs mais dès qu'il faut faire quelque chose de répétitif ça peut devenir ultra relou. Pascal Borel 24/09/2024

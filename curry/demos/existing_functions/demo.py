@@ -1,9 +1,9 @@
 import typing
 
+from curry.block import Block
 from curry.demos.existing_functions.fake_methods import constant, filter_data, load_data, merge_data, sum_data
+from curry.flow import submit_workflow
 from curry.methods import MethodManager
-from curry.models import Block
-from curry.workflow import submit_workflow
 
 # Enlisting the example methods
 MethodManager.register(name="constant")(constant)

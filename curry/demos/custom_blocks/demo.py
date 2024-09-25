@@ -1,8 +1,8 @@
 import typing
 
+from curry.block import Block, BlockConnection, BlockProducer
+from curry.flow import submit_workflow
 from curry.methods import MethodManager
-from curry.models import Block, BlockConnection, BlockProducer
-from curry.workflow import submit_workflow
 
 
 @MethodManager.register(name="constant")

@@ -1,4 +1,3 @@
-import functools
 import inspect
 import typing
 from functools import wraps
@@ -8,7 +7,7 @@ from uuid import uuid4
 from pydantic import BaseModel, ConfigDict, Field, validate_call
 from pydantic.types import UUID4
 
-from curry.models import Block
+from curry.block import Block
 from curry.utils.string.uuid import deterministic_uuid_v4
 from curry.utils.typing import AnyCallable
 from curry.utils.typing.typing import AnyDict

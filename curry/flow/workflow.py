@@ -2,8 +2,8 @@ import typing
 
 from dask.delayed import Delayed, delayed
 
+from curry.block import Block
 from curry.methods import MethodManager
-from curry.models import Block
 from curry.utils.typing import AnyDict
 
 

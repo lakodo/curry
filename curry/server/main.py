@@ -5,18 +5,20 @@ import threading
 import time
 import typing
 
+from dask.bag.core import Bag
+from dask.bag.core import from_sequence
 from dask.delayed import Delayed, delayed
 from dask.distributed import Client
 from distributed import Future
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
+from curry.block import Block, BlockConnection, BlockProducer
+from curry.flow import submit_workflow
 from curry.methods import MethodManager
-from curry.models import Block, BlockConnection, BlockProducer
 from curry.utils.typing.typing import AnyDict
-from curry.workflow import submit_workflow
 
 from .utils.time import format_datetime
 
@@ -235,77 +237,77 @@ async def display_workflow_builder(request: Request, workflow_id: str) -> HTMLRe
 # WORKFLOW_RESULTS = {}
 
 
-workflow_state_lock = threading.Lock()
-WORKFLOW_STATE: dict[str, dict[str, Delayed]] = {}
-WORKFLOW_FUTURE: dict[str, dict[str, Future]] = {}
+# workflow_state_lock = threading.Lock()
+# WORKFLOW_STATE: dict[str, dict[str, Delayed]] = {}
+# WORKFLOW_FUTURE: dict[str, dict[str, Future]] = {}
 
 
-@app.get("/workflows/{workflow_id}/delay")
-async def delay_workflow(request: Request, workflow_id: str) -> HTMLResponse:
-    task_delayed_dict: dict[str, Delayed] = {}
+# @app.get("/workflows/{workflow_id}/delay")
+# async def delay_workflow(request: Request, workflow_id: str) -> HTMLResponse:
+#     task_delayed_dict: dict[str, Delayed] = {}
 
-    # Iterate through the blocks of the workflow
-    for block in BLOCK_FLOW_EXAMPLE:
-        block_id = block.id
-        block_method_id = block.method_id or "no_method"
+#     # Iterate through the blocks of the workflow
+#     for block in BLOCK_FLOW_EXAMPLE:
+#         block_id = block.id
+#         block_method_id = block.method_id or "no_method"
 
-        # Retrieve the function corresponding to the block type
-        block_method_info = MethodManager.get_method_info(block_method_id)
-        block_method = block_method_info.method
+#         # Retrieve the function corresponding to the block type
+#         block_method_info = MethodManager.get_method_info(block_method_id)
+#         block_method = block_method_info.method
 
-        # Merge block parameters with block connections
-        block_parameters = {}
-        if len(block.connections) > 0 or len(block.parameters) > 0:
-            block_parameters: AnyDict = {
-                **block.parameters,
-                **{
-                    connection.self_input_name: task_delayed_dict[connection.source_block_id]
-                    for connection in block.connections
-                },
-            }
+#         # Merge block parameters with block connections
+#         block_parameters = {}
+#         if len(block.connections) > 0 or len(block.parameters) > 0:
+#             block_parameters: AnyDict = {
+#                 **block.parameters,
+#                 **{
+#                     connection.self_input_name: task_delayed_dict[connection.source_block_id]
+#                     for connection in block.connections
+#                 },
+#             }
 
-        # Create the Dask task for the block and submit it
-        with workflow_state_lock:
-            task_delayed_dict[block_id] = delayed(block_method)(**block_parameters)
-            print(block_method.__name__, block_parameters, task_delayed_dict[block_id])
-            default_local_client.submit(task_delayed_dict[block_id])
-            # task_future_dict[block_id] = default_local_client.submit(task_delayed_dict[block_id])  # type: ignore  # noqa: PGH003
+#         # Create the Dask task for the block and submit it
+#         with workflow_state_lock:
+#             task_delayed_dict[block_id] = delayed(block_method)(**block_parameters)
+#             print(block_method.__name__, block_parameters, task_delayed_dict[block_id])
+#             default_local_client.submit(task_delayed_dict[block_id])
+#             # task_future_dict[block_id] = default_local_client.submit(task_delayed_dict[block_id])  # type: ignore  # noqa: PGH003
 
-    with workflow_state_lock:
-        WORKFLOW_STATE[workflow_id] = task_delayed_dict
-        print("\ttask_delayed_dict:\n", WORKFLOW_STATE[workflow_id])
+#     with workflow_state_lock:
+#         WORKFLOW_STATE[workflow_id] = task_delayed_dict
+#         print("\ttask_delayed_dict:\n", WORKFLOW_STATE[workflow_id])
 
-    return 0
-
-
-@app.get("/workflows/{workflow_id}/submit")
-async def submit_workflow(request: Request, workflow_id: str) -> HTMLResponse:
-    task_future_dict: dict[str, Future] = {}
-
-    with workflow_state_lock:
-        last_task_delayed: Delayed = WORKFLOW_STATE[workflow_id][list(WORKFLOW_STATE[workflow_id].keys())[-1]]
-
-        last_task_future = default_local_client.submit(last_task_delayed)
-        WORKFLOW_FUTURE[workflow_id] = {"last": last_task_future}
-        print("\ttask_future_dict:\n", WORKFLOW_FUTURE[workflow_id])
-
-    return 1
+#     return 0
 
 
-@app.get("/workflows/{workflow_id}/result")
-async def print_result_workflow(request: Request, workflow_id: str) -> HTMLResponse:
-    if workflow_id in WORKFLOW_STATE and workflow_id in WORKFLOW_FUTURE:
-        with workflow_state_lock:
-            print("\ttask_delayed_dict:\n", WORKFLOW_STATE[workflow_id])
-            print("\ttask_future_dict:\n", WORKFLOW_FUTURE[workflow_id])
-            for k, v in WORKFLOW_FUTURE[workflow_id].items():
-                print(k, v)
+# @app.get("/workflows/{workflow_id}/submit")
+# async def get_submit_workflow(request: Request, workflow_id: str) -> HTMLResponse:
+#     task_future_dict: dict[str, Future] = {}
 
-    return 2
+#     with workflow_state_lock:
+#         last_task_delayed: Delayed = WORKFLOW_STATE[workflow_id][list(WORKFLOW_STATE[workflow_id].keys())[-1]]
+
+#         last_task_future = default_local_client.submit(last_task_delayed)
+#         WORKFLOW_FUTURE[workflow_id] = {"last": last_task_future}
+#         print("\ttask_future_dict:\n", WORKFLOW_FUTURE[workflow_id])
+
+#     return 1
+
+
+# @app.get("/workflows/{workflow_id}/result")
+# async def print_result_workflow(request: Request, workflow_id: str) -> HTMLResponse:
+#     if workflow_id in WORKFLOW_STATE and workflow_id in WORKFLOW_FUTURE:
+#         with workflow_state_lock:
+#             print("\ttask_delayed_dict:\n", WORKFLOW_STATE[workflow_id])
+#             print("\ttask_future_dict:\n", WORKFLOW_FUTURE[workflow_id])
+#             for k, v in WORKFLOW_FUTURE[workflow_id].items():
+#                 print(k, v)
+
+#     return 2
 
 
 @app.get("/test-dask/{key}")
-async def test_dask(request: Request, key: int):
+async def test_dask(request: Request, key: int) -> JSONResponse:
     from dask import bag as db
 
     client = Client(address="tcp://127.0.0.1:18000")
@@ -317,7 +319,8 @@ async def test_dask(request: Request, key: int):
 
     N = key
 
-    x = db.from_sequence(range(N))
+
+    x:Bag = from_sequence(range(N))
 
     mults = x.map(multiply_by_two)
 
