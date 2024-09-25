@@ -80,6 +80,10 @@ docs-test: ## Test if documentation can be built without warnings or errors
 docs: ## Build and serve the documentation
 	@uv run mkdocs serve
 
+.PHONY: docs-release
+docs-release: ## Build and release the documentation
+	@pdm run mkdocs gh-deploy --force
+
 .PHONY: alembic-check
 alembic-check: ## Check the current database state compared to the alembic migrations
 	@echo "🚀 Running alembic check"

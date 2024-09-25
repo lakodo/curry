@@ -1,11 +1,11 @@
 site_name: curry
 repo_url: https://github.com/lakodo/curry
-site_url: https://lakodo.github.io/curry
+site_url: https://lako.do/curry
 site_description: Wrap dask scheduler to make it easy to buid datascience flow
 site_author: Joris GUERRY
 edit_uri: edit/main/docs/
 repo_name: lakodo/curry
-copyright: Maintained by <a href="https://lako.dp">Lako.do</a>.
+copyright: Maintained by <a href="https://9h.gg">Joris GUERRY</a>.
 
 nav:
   - Home: index.md
