@@ -1,15 +1,11 @@
 import datetime
 import math
 import os
-import threading
 import time
 import typing
 
-from dask.bag.core import Bag
-from dask.bag.core import from_sequence
-from dask.delayed import Delayed, delayed
+from dask.bag.core import Bag, from_sequence
 from dask.distributed import Client
-from distributed import Future
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -308,7 +304,6 @@ async def display_workflow_builder(request: Request, workflow_id: str) -> HTMLRe
 
 @app.get("/test-dask/{key}")
 async def test_dask(request: Request, key: int) -> JSONResponse:
-    from dask import bag as db
 
     client = Client(address="tcp://127.0.0.1:18000")
 
