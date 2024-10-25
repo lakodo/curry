@@ -1,6 +1,5 @@
 # TODO
 
-## Next steps
 
 ### 0/ intégrer sqlite
 
@@ -22,10 +21,12 @@ avoir un formalisme d'input output pour matcher les transactions (sort de render
 
 ### 2/ dask progress and result display
 
--
+### 3/ instanciation de bloc
+
+- docker pour streamlit <https://docs.streamlit.io/deploy/tutorials/docker>
+- 
 
 ## Autre
-
 
 - lire thèse Paul BONIOL
 - dask (à part) to get progress from client
@@ -54,7 +55,6 @@ from pydantic import ValidationError, validate_call
 - worker resilience: <https://examples.dask.org/resilience.html>
 - evolving workflows <https://github.com/dask/dask-examples/blob/main/applications/evolving-workflows.ipynb>
 - <https://docs.dask.org/en/stable/deploying-python-advanced.html>
-
 
 ## Quotes
 
